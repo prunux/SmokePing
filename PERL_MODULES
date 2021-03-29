@@ -12,6 +12,7 @@ Net::LDAP
 Net::DNS
 IO::Pty
 LWP
+LWP::Protocol::https
 Authen::Radius
 Path::Tiny
 InfluxDB::HTTP
