@@ -51,7 +51,7 @@ sub get_multi_detail ($$$$;$){
         $tree=$tree->{__tree_link};
         $phys_open = $tree->{__real_path};
     }
-    
+
     my @dirs = @{$phys_open};
 
     return "<div>ERROR: ".(join ".", @dirs)." has no probe defined</div>"
@@ -70,20 +70,20 @@ sub get_multi_detail ($$$$;$){
 
     for (@dirs) {
         $dir .= "/$_";
-        mkdir $cfg->{General}{imgcache}.$dir, 0755 
+        mkdir $cfg->{General}{imgcache}.$dir, 0755
                 unless -d  $cfg->{General}{imgcache}.$dir;
         die "ERROR: creating  $cfg->{General}{imgcache}$dir: $!\n"
                 unless -d  $cfg->{General}{imgcache}.$dir;
-        
+
     }
 
     my $page;
     my $file = pop @dirs;
 
     my @hosts = split /\s+/, $tree->{host};
-    
 
-    
+
+
     my $ProbeDesc;
     my $ProbeUnit;
 
@@ -91,14 +91,14 @@ sub get_multi_detail ($$$$;$){
     my $imgbase;
     my $imghref;
     my @tasks;
-    my %lastheight;     
+    my %lastheight;
     my $max = {};
 
     if ($mode eq 's'){
         # in nav mode there is only one graph, so the height calculation
-        # is not necessary.     
+        # is not necessary.
         $imgbase = $cfg->{General}{imgcache}."/".(join "/", @dirs)."/${file}";
-        $imghref = $cfg->{General}{imgurl}."/".(join "/", @dirs)."/${file}";    
+        $imghref = $cfg->{General}{imgurl}."/".(join "/", @dirs)."/${file}";
         @tasks = @{$cfg->{Presentation}{detail}{_table}};
         if (open (HG,"<${imgbase}.maxheight")){
             while (<HG>){
@@ -108,17 +108,17 @@ sub get_multi_detail ($$$$;$){
             }
             close HG;
         }
-        for my $rrd (@hosts){            
-             my $newmax = Smokeping::findmax($cfg, $cfg->{General}{datadir}.$rrd.".rrd");             
+        for my $rrd (@hosts){
+             my $newmax = Smokeping::findmax($cfg, $cfg->{General}{datadir}.$rrd.".rrd");
              map {$max->{$_} = $newmax->{$_} if not $max->{$_} or $newmax->{$_} > $max->{$_} } keys %{$newmax};
         }
         if (open (HG,">${imgbase}.maxheight")){
              foreach my $size (keys %{$max}){
-                 print HG "$size $max->{$size}\n";        
+                 print HG "$size $max->{$size}\n";
              }
              close HG;
         }
-    } 
+    }
     elsif ($mode eq 'n' or $mode eq 'a') {
 
         if ($mode eq 'n') {
@@ -137,8 +137,8 @@ sub get_multi_detail ($$$$;$){
         }
 
         @tasks = (["Navigator Graph", Smokeping::parse_datetime($q->param('start')),Smokeping::parse_datetime($q->param('end'))]);
-    } else  { 
-        # chart mode 
+    } else  {
+        # chart mode
         mkdir $cfg->{General}{imgcache}."/__chartscache",0755  unless -d  $cfg->{General}{imgcache}."/__chartscache";
         # remove old images after one hour
         my $pattern = $cfg->{General}{imgcache}."/__chartscache/*.png";
@@ -154,7 +154,7 @@ sub get_multi_detail ($$$$;$){
         my $val = 0;
         for my $host (@hosts){
             my ($graphret,$xs,$ys) = RRDs::graph
-            ("dummy", 
+            ("dummy",
             '--start', $tasks[0][1],
             '--end', $tasks[0][2],
             "DEF:maxping=$cfg->{General}{datadir}${host}.rrd:median:AVERAGE",
@@ -163,7 +163,7 @@ sub get_multi_detail ($$$$;$){
             return "<div>RRDtool did not understand your input: $ERROR.</div>" if $ERROR;
             $val = $graphret->[0] if $val < $graphret->[0];
         }
-        $val = 1e-6 if $val =~ /nan/i;          
+        $val = 1e-6 if $val =~ /nan/i;
         $max = { $tasks[0][1] => $val * 1.5 };
     }
 
@@ -172,13 +172,13 @@ sub get_multi_detail ($$$$;$){
         my $xs;
         my $ys;
         my $sigtime = ($end and $end =~ /^\d+$/) ? $end : time;
-        my $date = $cfg->{Presentation}{detail}{strftime} ? 
+        my $date = $cfg->{Presentation}{detail}{strftime} ?
                    POSIX::strftime($cfg->{Presentation}{detail}{strftime}, localtime($sigtime)) : scalar localtime($sigtime);
         if ( $RRDs::VERSION >= 1.199908 ){
             $date =~ s|:|\\:|g;
         }
         $end ||= 'last';
-        $start = Smokeping::exp2seconds($start) if $mode =~ /[s]/; 
+        $start = Smokeping::exp2seconds($start) if $mode =~ /[s]/;
 
         my $startstr = $start =~ /^\d+$/ ? POSIX::strftime("%Y-%m-%d %H:%M",localtime($mode eq 'n' ? $start : time-$start)) : $start;
         my $endstr   = $end =~ /^\d+$/ ? POSIX::strftime("%Y-%m-%d %H:%M",localtime($mode eq 'n' ? $end : time)) : $end;
@@ -186,7 +186,7 @@ sub get_multi_detail ($$$$;$){
         my $realstart = ( $mode =~ /[sc]/ ? '-'.$start : $start);
 
         my @G;
-        my @colors = split /\s+/, $cfg->{Presentation}{multihost}{colors};        
+        my @colors = split /\s+/, $cfg->{Presentation}{multihost}{colors};
         my $i = 0;
         for my $host (@hosts){
             $i++;
@@ -212,7 +212,7 @@ sub get_multi_detail ($$$$;$){
             else {
                 $ProbeDesc = "various probes";
             }
-            my $XProbeUnit = $probe->ProbeUnit(); 
+            my $XProbeUnit = $probe->ProbeUnit();
             if (not $ProbeUnit or $ProbeUnit eq $XProbeUnit){
                 $ProbeUnit = $XProbeUnit;
             }
@@ -250,7 +250,7 @@ sub get_multi_detail ($$$$;$){
                 "GPRINT:ploss$i:AVERAGE:%5.1lf %% av ls",
                 sprintf('COMMENT:%5.1lf ms sd',$stddev*1000.0),
                 "GPRINT:avmsr$i:%5.1lf %s am/as\\l";
-             
+
         };
         my @task;
         push @task, "--logarithmic" if  $cfg->{Presentation}{detail}{logarithmic} and
@@ -274,13 +274,13 @@ sub get_multi_detail ($$$$;$){
                'COMMENT:end\: '.$date.'\j';
 
         my $graphret;
-        ($graphret,$xs,$ys) = RRDs::graph @task;
+        ($graphret,$xs,$ys) = RRDs::graph(@task);
         #  print "<div>INFO:".join("<br/>",@task)."</div>";
         my $ERROR = RRDs::error();
         if ($ERROR) {
             return "<div>ERROR: $ERROR</div><div>".join("<br/>",@task)."</div>";
         };
-        
+
 
         if ($mode eq 'a'){ # ajax mode
              open my $img, "${imgbase}_${end}_${start}.png";
@@ -293,7 +293,7 @@ sub get_multi_detail ($$$$;$){
              print $data;
              unlink "${imgbase}_${end}_${start}.png";
              return undef;
-        } 
+        }
 
         elsif ($mode eq 'n'){ # navigator mode
             $page .= "<div class=\"panel\">";
